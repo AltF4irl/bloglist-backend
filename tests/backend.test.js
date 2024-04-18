@@ -73,7 +73,7 @@ test('if likes is missing should be 0', async () => {
     assert.strictEqual(queryBlog.likes, 0)
 })
 
-test.only('if title or url are missing return 400', async () => {
+test('if title or url are missing return 400', async () => {
     const newBlogV1 = {
         author: 'my only sunshine',
         url: 'you make me happy',
@@ -93,6 +93,45 @@ test.only('if title or url are missing return 400', async () => {
         .post('/api/blogs')
         .send(newBlogV2)
         .expect(400)
+})
+
+test('if blog is deleted it doesn\'nt exist anymore', async () => {
+    const blogsAtFirst = await getDB()
+    const blogToDelete = blogsAtFirst[3]
+
+    await api
+        .delete(`/api/blogs/${blogToDelete.id}`)
+        .expect(204)
+
+    const blogsAtEnd = await getDB()
+    const blogIds = blogsAtEnd.map( blog => blog.id)
+
+    assert(!blogIds.includes(blogToDelete.id))
+    assert.strictEqual(blogsAtEnd.length, blogsAtFirst.length - 1)
+})
+
+test.only('if likes are updated the count is correct', async () => {
+    const blogsAtStart = await getDB()
+    const blogToUpdate = blogsAtStart[0]
+
+    const newBlog = {...blogToUpdate, likes: 69}
+    console.log(newBlog)
+
+    await api
+        .put(`/api/blogs/${blogToUpdate.id}`)
+        .send(newBlog)
+
+        console.log('we got here')
+    const updatedBlogInDB = await Blog.findById(blogToUpdate.id)
+    const blogsAtLast = await getDB()
+    // const updatedBlogInDB = blogsAtLast[0]
+
+    assert.strictEqual(updatedBlogInDB.likes, newBlog.likes)
+    assert.strictEqual(updatedBlogInDB.title, blogToUpdate.title)
+    assert.strictEqual(updatedBlogInDB.author, blogToUpdate.author)
+    assert.strictEqual(updatedBlogInDB.url, blogToUpdate.url)
+    assert.strictEqual(updatedBlogInDB.id, blogToUpdate.id)
+    assert.strictEqual(blogsAtLast.length, blogsAtStart.length)
 })
 
 after(async () => {
