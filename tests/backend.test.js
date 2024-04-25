@@ -4,7 +4,8 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../models/blog')
-const {initialBlogs, getDB} = require('./test_helper')
+const User = require('../models/user')
+const {initialBlogs, initialUsers, getDB, getUserDB} = require('./test_helper')
 
 const api = supertest(app)
 
@@ -14,6 +15,12 @@ beforeEach(async () => {
     const blogsArray = initialBlogs.map(blog => new Blog(blog))
     const promiseArray = blogsArray.map(blog => blog.save())
     await Promise.all(promiseArray)
+
+    await User.deleteMany({})
+
+    const usersArray = initialUsers.map(user => new User(user))
+    const userPromiseArray = usersArray.map(user => user.save())
+    await Promise.all(userPromiseArray)
 })
 
 test('blogs are coming in JSON format', async () => {
@@ -110,7 +117,7 @@ test('if blog is deleted it doesn\'nt exist anymore', async () => {
     assert.strictEqual(blogsAtEnd.length, blogsAtFirst.length - 1)
 })
 
-test.only('if likes are updated the count is correct', async () => {
+test('if likes are updated the count is correct', async () => {
     const blogsAtStart = await getDB()
     const blogToUpdate = blogsAtStart[0]
 
@@ -133,6 +140,82 @@ test.only('if likes are updated the count is correct', async () => {
     assert.strictEqual(updatedBlogInDB.id, blogToUpdate.id)
     assert.strictEqual(blogsAtLast.length, blogsAtStart.length)
 })
+
+describe.only('user tests', () => {
+    test.only('username should be unique', async () => {
+        const firsUsername = await getUserDB()
+
+        const newUser = {
+            username: firsUsername[0].username,
+            name: 'test',
+            password: 'test'
+        }
+
+        await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+    })
+
+    test.only('username should be 3 chars or more', async () => {
+        const firsUser = await getUserDB()
+
+        const newUser = {
+            username: '12',
+            name: 'test',
+            password: 'test'
+        }
+
+        await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+    })
+
+    test.only('password should be 3 chars or more', async () => {
+        const firsUser = await getUserDB()
+
+        const newUser = {
+            username: '12',
+            name: 'test',
+            password: 'te'
+        }
+
+        await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+    })
+
+    test.only('password is required', async () => {
+        const firsUser = await getUserDB()
+
+        const newUser = {
+            username: '12',
+            name: 'test',
+        }
+
+        await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+    })
+
+    test.only('username is required', async () => {
+        const firsUser = await getUserDB()
+
+        const newUser = {
+            name: 'test',
+            password: 'test'
+        }
+
+        await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+    })
+})
+
 
 after(async () => {
     await mongoose.connection.close()

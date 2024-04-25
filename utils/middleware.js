@@ -15,11 +15,11 @@ const unknownEndpoint = (req, res) => {
 const errorHandler = (err, req, res, next) => {
     error(err.message)
 
-    if (error.name === 'CastError') {
+    if (err.name === 'CastError') {
         return res.status(400).send({ error: 'malformatted id'})
-    } else if (error.name === 'ValidationError') {
+    } else if (err.name === 'ValidationError') {
         return res.status(400).json({ error: err.message })
-    }
+    } 
 }
 
 module.exports = {
