@@ -5,7 +5,7 @@ const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../models/blog')
 const User = require('../models/user')
-const {initialBlogs, initialUsers, getDB, getUserDB} = require('./test_helper')
+const {initialBlogs, initialUsers, getDB, getUserDB, token} = require('./test_helper')
 
 const api = supertest(app)
 
@@ -16,22 +16,22 @@ beforeEach(async () => {
     const promiseArray = blogsArray.map(blog => blog.save())
     await Promise.all(promiseArray)
 
-    await User.deleteMany({})
+    // await User.deleteMany({})
 
-    const usersArray = initialUsers.map(user => new User(user))
-    const userPromiseArray = usersArray.map(user => user.save())
-    await Promise.all(userPromiseArray)
+    // const usersArray = initialUsers.map(user => new User(user))
+    // const userPromiseArray = usersArray.map(user => user.save())
+    // await Promise.all(userPromiseArray)
 })
 
 describe.only('blogs tests', () => {
-    test.only('blogs are coming in JSON format', async () => {
+    test('blogs are coming in JSON format', async () => {
         await api   
             .get('/api/blogs')
             .expect(200)
             .expect('Content-Type', /application\/json/)
     })
     
-    test.only('unique identifier is id and not _id', async () => {
+    test('unique identifier is id and not _id', async () => {
         const blog = await Blog.findOne({})
         const blogToJson = blog.toJSON()
         console.log(blogToJson)
@@ -40,7 +40,7 @@ describe.only('blogs tests', () => {
         console.log(Object.keys(blogToJson))
     })
     
-    test('post request creates a new blog', async () => {
+    test.only('post request creates a new blog', async () => {
         const blogsAtStart = await getDB()
     
         const newBlog = {
@@ -52,6 +52,7 @@ describe.only('blogs tests', () => {
     
         await api
             .post('/api/blogs')
+            .set('Authorization', `Bearer ${token}`)
             .send(newBlog)
             .expect(201)
             .expect('Content-Type', /application\/json/)
@@ -61,8 +62,25 @@ describe.only('blogs tests', () => {
         assert.strictEqual(blogsAtEnd.length, blogsAtStart.length + 1)
     
     })
+
+    test.only('post request without token teturns 401', async () => {
+        const blogsAtStart = await getDB()
     
-    test('if likes is missing should be 0', async () => {
+        const newBlog = {
+            title: 'you are my sunshine',
+            author: 'my only sunshine',
+            url: 'you make me happy',
+            likes: 19
+        }
+    
+        await api
+            .post('/api/blogs')
+            .set('Authorization', ``)
+            .send(newBlog)
+            .expect(401)   
+    })
+    
+    test.only('if likes is missing should be 0', async () => {
         const newBlog = {
             title: 'you are my sunshine',
             author: 'my only sunshine',
@@ -71,6 +89,7 @@ describe.only('blogs tests', () => {
     
         await api
             .post('/api/blogs')
+            .set('Authorization', `Bearer ${token}`)
             .send(newBlog)
             .expect(201)
             .expect('Content-Type', /application\/json/)
@@ -81,7 +100,7 @@ describe.only('blogs tests', () => {
         assert.strictEqual(queryBlog.likes, 0)
     })
     
-    test('if title or url are missing return 400', async () => {
+    test.only('if title or url are missing return 400', async () => {
         const newBlogV1 = {
             author: 'my only sunshine',
             url: 'you make me happy',
@@ -94,11 +113,13 @@ describe.only('blogs tests', () => {
     
         await api
             .post('/api/blogs')
+            .set('Authorization', `Bearer ${token}`)
             .send(newBlogV1)
             .expect(400)
     
         await api
             .post('/api/blogs')
+            .set('Authorization', `Bearer ${token}`)
             .send(newBlogV2)
             .expect(400)
     })
@@ -109,6 +130,7 @@ describe.only('blogs tests', () => {
     
         await api
             .delete(`/api/blogs/${blogToDelete.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .expect(204)
     
         const blogsAtEnd = await getDB()

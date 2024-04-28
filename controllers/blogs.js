@@ -17,7 +17,7 @@ blogsRouter.post('/', userExtractor, async (req, res) => {
     }
 
     const user = req.user
-    console.log(user)
+    console.log(user, "user returned in the request")
 
     const blogV2 = {
         title: req.body.title,
