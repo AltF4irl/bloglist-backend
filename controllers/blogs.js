@@ -38,6 +38,7 @@ blogsRouter.post('/', userExtractor, async (req, res) => {
 blogsRouter.delete('/:id', userExtractor, async (req, res) => {
 
     const user = req.user
+    console.log('user', user)
     const blog = await Blog.findById(req.params.id)
 
     console.log("user", user, "enduser")
