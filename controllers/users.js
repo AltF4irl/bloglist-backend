@@ -5,8 +5,17 @@ const bcrypt = require('bcrypt')
 
 usersRouter.get('/', async (req, res) => {
     const users = await User.find({}).populate('blogs')
-
     res.json(users)
+})
+
+usersRouter.get('/:id', async (req, res) => {
+    const id = req.params.id
+    console.log(id)
+    const user = await User.findById(id).populate('blogs')
+    if (!user) {
+        return res.status(404).json({error: 'something went wrong'})
+    }
+    return res.json(user)
 })
 
 usersRouter.post('/', async (req, res) => {
